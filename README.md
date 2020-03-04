@@ -18,8 +18,9 @@
 ```
 config get replicaof
 ```
-
-### 修改主从信息
+![image](https://github.com/chenyiyi1/test1/blob/master/picture/12d3e614c89a2dded5f453b846c7ce1.png)
+### 修改主从信息,使其生效
 ```
-config set replicaof 
+SLAVEOF 10.2.1.21 6379
+config rewrite
 ```
