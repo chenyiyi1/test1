@@ -37,3 +37,8 @@ FLUSHALL 删除所有的key
 ### 3、当内存实际使用量近乎总内存使用量的一半？
 建议增大Redis可用内存，以免影响缓存速率。
 
+### 4、Redis客户端连接过多不释放？
+查看redis连接信息：
+/opt/redis/src/redis-cli -c -h x.x.x.x -p xxxx info clients
+设置空闲清理时间：
+redis-cli config set timeout 300
