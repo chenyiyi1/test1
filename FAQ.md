@@ -8,20 +8,24 @@
 排查二：内存碎片率在1.0-1.5之间属于正常范围,内存在正常运行，建议增大集群的内存容量，提高集群的性能，否则Redis的处理请求效率会降低。
 
 ### 3、当Redis客户端的总连接数超过预期数值，触发告警的处理方法？
-此时的Redis性能较低，CPU占用率很高，检查Redis客户端是否都是有效连接，（./redis-cli –h host –p port client list），由于客户端频繁的连服务器，每次连接都在很短的时间内结束，导致网络丢包。为了解决这两个问题，需要做的就是服务端和客户端定期检查，客户端通过setTestWhileIdle(Boolean.True)、setTimeBetweenEvictionRunsMillis(xxx) 来定期检查方式死链；服务端通过设置超时时间来做到检查连接的问题。
-在客户端查看， netstat -ae |grep redis
-发现系统存在大量TIME_WAIT状态的连接，通过调整内核参数解决，
-vi /etc/sysctl.conf
+此时的Redis性能较低，CPU占用率很高，检查Redis客户端是否都是有效连接，（./redis-cli –h host –p port client list），由于客户端频繁的连服务器，每次连接都在很短的时间内结束，导致网络丢包。为了解决这两个问题，需要做的就是服务端和客户端定期检查，客户端通过setTestWhileIdle(Boolean.True)、setTimeBetweenEvictionRunsMillis(xxx) 来定期检查死链，服务端通过设置超时时间来做到检查连接的问题。
+另在客户端查看， netstat -ae |grep redis，可能会发现系统存在大量TIME_WAIT状态的连接，通过调整内核参数解决，vi /etc/sysctl.conf。
 编辑文件，加入以下内容：
 net.ipv4.tcp_timestamps=1 
 net.ipv4.tcp_syncookies = 1
 net.ipv4.tcp_tw_reuse = 1
 net.ipv4.tcp_tw_recycle = 1
 net.ipv4.tcp_fin_timeout = 30
- 
 然后执行 /sbin/sysctl -p 让参数生效。
 
 ### 4、当一分钟内每秒的出入流量平均值超过预期数值，触发告警的处理方法？
-可能是有某些较大的key一直在频繁访问导致。未防止阻塞进程，建议不在Redis客户端执行查询操作，而是将备份文件导出，使用第三方工具redis-rdb-tools对Redis备份文件dump.rdb进行分析，找出最大key，与开发人员确认具体情况，是否设置过期时间或者删除key。
+可能是有某些较大的key一直在频繁访问导致。为防止阻塞进程，建议不在Redis客户端执行查询操作，而是将备份文件导出，使用第三方工具redis-rdb-tools对Redis备份文件dump.rdb进行分析，找出最大key，与开发人员确认具体情况，是否设置过期时间或者删除key。
+
+### 5、当大量数据在写入Redis，，但通过grafana监控发现Memory Usage（内存使用量） 没有变化？
+排除故障1：
+先确认数据库密码 -a xxx是否正确的 ，若密码填错，数据不会真实的写入数据库，所以监控的内存使用量不会有变化。
+排除故障2：
+登录数据库客户端，执行monitor查看Redis，发现数据一直有真实写入操作，key在不断的覆盖重写，可能是大量用户一直在频繁操作导致。
+
 
 
