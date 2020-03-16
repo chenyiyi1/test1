@@ -26,13 +26,16 @@ SLAVEOF 10.2.1.21 6379
 config rewrite
 ```
 ## 系统问题：
-### 1、执行一些命令后，导致系统卡顿，甚至断开主从连接？
+### 1、执行命令后，导致系统卡顿，甚至断开主从连接？
 在Redis存储了大量数据时，一些命令可能导致系统阻塞，尽量不要执行下列命令。
-KEYS 查询所有的key
-FLUSHALL 删除所有的key
+config、flushall、flushdb、shutdown、eval。
+
 
 ### 2、Redis的cpu占比过高？
-慢查询堆积，
+排查一：
+连接数过多，关闭僵尸连接，采用redi-cli登录,采用client kill ip:port(redis远程连接的ip和端口)。修改redis timeout参数。
+排查二：
+慢查询堆积，因为redis是单线程，如果有慢查询的话，会阻塞住之后的操作，通过redis日志查，可以对慢查询进行持久化，比如定时存放到mysql之类。
 
 ### 3、当内存实际使用量近乎总内存使用量的一半？
 建议增大Redis可用内存，以免影响缓存速率。
@@ -42,3 +45,9 @@ FLUSHALL 删除所有的key
 /opt/redis/src/redis-cli -c -h x.x.x.x -p xxxx info clients
 设置空闲清理时间：
 redis-cli config set timeout 300
+
+### 5、Redis的持久化方式?
+开启了RDB内存快照和AOF日志文件。
+### 6、线上尽量禁止使用 monitor 命令？
+它实时打印出 Redis 服务器接收到的命令，调试可以用。在高并发条件下，会存在内存暴增和影响 Redis 性能的隐患。
+### 7、
